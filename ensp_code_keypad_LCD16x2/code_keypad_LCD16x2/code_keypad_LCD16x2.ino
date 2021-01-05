@@ -1,19 +1,32 @@
-#include <Servo.h>
+//#include <Servo.h>
 #include <Stepper.h>
 #include <Wire.h>
-#include <LiquidCrystal.h>
-
-// Include the keypad library
+//#include <LiquidCrystal.h>
+#include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
-// change this to the number of steps on your motor
+
+#define LCD_RS 2
+#define LCD_RW 1
+#define LCD_E  0 // sometimes EN
+#define LCD_D4 4
+#define LCD_D5 5
+#define LCD_D6 6
+#define LCD_D7 7
+#define LCD_BACKLIGHT 3
 #define STEPS 32
 
+
 //declaration des ports du LCD sur les broches de l'arduino
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+//const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 //initialisation de l'afficheur avec les ports
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+//LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 Stepper stepper(STEPS, 2, 3, 4, 5);
 //Servo servo ;
+
+#define LCD_COLS 20
+#define LCD_ROWS 4
+#define LCD_I2C_ADDRESS 0x20
+LiquidCrystal_I2C lcd(LCD_I2C_ADDRESS, LCD_COLS, LCD_ROWS);
 
 const int pot    = A0;
 
@@ -47,7 +60,8 @@ void setup()
   Serial.begin(9600);
 
   //setup lcd with backlight and initialize
-  lcd.begin(16, 2);
+  lcd.begin(20, 2);
+  lcd.backlight();
   pinMode( 13, OUTPUT );
   digitalWrite( 13, LOW );
   pinMode( 10, OUTPUT );
@@ -60,22 +74,18 @@ void setup()
 int direction_ = 1, speed_ = 0;
 
 
-void loop()
-{
+void loop(){
   lcd.setCursor( 1 , 0 );
   lcd.print( "ENTER PASSWORD");
   int cursor_value=0;
   String value="";
   char customKey;
   int waiting_time=0; 
-  if(number_of_test<5)
-  {
-    while(cursor_value<5)
-    {
+  if(number_of_test<5){
+    while(cursor_value<5){
       //get key value if pressed
       customKey = customKeypad.getKey();
-      if (customKey)
-      {
+      if (customKey){
         cursor_value++;
         value+=customKey;
         lcd.setCursor(cursor_value,1);
@@ -89,70 +99,65 @@ void loop()
       lcd.print("ACCESS DENIED!!");
       Serial.println("ACCESS DENIED!!");
       digitalWrite( 13, HIGH );
-      servo.write( -60 );
+      //servo.write( -60 );
       delay( 500 );
       digitalWrite( 13, LOW );
       delay( 500 );
       digitalWrite( 13, HIGH );
-      servo.write( -120 );
+      //servo.write( -120 );
       delay( 500 );
       digitalWrite( 13, LOW );
       delay( 500 );
       digitalWrite( 13, HIGH );
-      servo.write( -180 );
+      //servo.write( -180 );
       delay( 500 );
       digitalWrite( 13, LOW );
       delay(1000);
       lcd.clear();
-        
     }
-    else
-    {
+    else{
       int val = analogRead(pot);
-      if ( speed_ != map(val, 0, 1023, 2, 500) )
-  { // if the speed was changed
-    speed_ = map(val, 0, 1023, 2, 500);
-    // set the speed of the motor
-    stepper.setSpeed(speed_);
-  }
+      if ( speed_ != map(val, 0, 1023, 2, 500) ){ // if the speed was changed
+        speed_ = map(val, 0, 1023, 2, 500);
+        // set the speed of the motor
+        stepper.setSpeed(speed_);
+      }
       stepper.step(direction_);
       lcd.clear();
       lcd.print("ACCESS PERMITTED!!");
       digitalWrite( 10, HIGH );
-      servo.write( 60 );
+      //servo.write( 60 );
       delay( 500 );
       digitalWrite( 10, LOW );
       //servo.write( 120 );
       delay( 500 );
       digitalWrite( 10, HIGH );
-      servo.write( 120 );
+      //servo.write( 120 );
       delay( 500 );
       digitalWrite( 10, LOW );
       //servo.write( 240 );
       delay( 500 );
       digitalWrite( 10, HIGH );
-      servo.write( 180 );
+      //servo.write( 180 );
       delay( 500 );
       digitalWrite( 10, LOW );
       //servo.write( 360 );
       delay(1000);
-      servo.write( 0 );
+      //servo.write( 0 );
       lcd.clear();
     }
    }
-   else
-   {
+   else{
     multiple_time++;
     number_of_test=0;
     waiting_time=multiple_time*5;
-     lcd.setCursor( 4, 0 );
+    lcd.setCursor( 4, 0 );
     lcd.print("RETRY AFTER ");
     lcd.setCursor( 0, 1 );
     lcd.print(waiting_time);
-     lcd.setCursor( 3, 1 );
+    lcd.setCursor( 3, 1 );
     lcd.print("SECONDS!!");
     delay(waiting_time*1000);
-     lcd.clear();
+    lcd.clear();
    }
-   
 }
