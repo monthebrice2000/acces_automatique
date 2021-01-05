@@ -1,16 +1,21 @@
 #include <Servo.h>
-
+#include <Stepper.h>
 #include <Wire.h>
 #include <LiquidCrystal.h>
 
 // Include the keypad library
 #include <Keypad.h>
+// change this to the number of steps on your motor
+#define STEPS 32
 
 //declaration des ports du LCD sur les broches de l'arduino
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 //initialisation de l'afficheur avec les ports
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-Servo servo ;
+Stepper stepper(STEPS, 2, 3, 4, 5);
+//Servo servo ;
+
+const int pot    = A0;
 
 //constants for row and column sizes
 const byte ROWS = 4;
@@ -30,7 +35,7 @@ char hexaKeys[ROWS][COLS] = {
 
 //connexion to the arduino board
 byte rowPins[ROWS] = {6, 7, 8, 9};
-byte colPins[COLS] = {A1, A2, A3, A4};
+byte colPins[COLS] = {A1, A2, A3, A4 };
 
 //create keypad object
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
@@ -47,10 +52,12 @@ void setup()
   digitalWrite( 13, LOW );
   pinMode( 10, OUTPUT );
   digitalWrite( 10, LOW );
-  servo.attach( A0 );
-  servo.write( 0 );
+  //servo.attach( A0 );
+  //servo.write( 0 );
   
 }
+
+int direction_ = 1, speed_ = 0;
 
 
 void loop()
@@ -101,6 +108,14 @@ void loop()
     }
     else
     {
+      int val = analogRead(pot);
+      if ( speed_ != map(val, 0, 1023, 2, 500) )
+  { // if the speed was changed
+    speed_ = map(val, 0, 1023, 2, 500);
+    // set the speed of the motor
+    stepper.setSpeed(speed_);
+  }
+      stepper.step(direction_);
       lcd.clear();
       lcd.print("ACCESS PERMITTED!!");
       digitalWrite( 10, HIGH );
