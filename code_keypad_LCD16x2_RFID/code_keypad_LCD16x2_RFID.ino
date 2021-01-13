@@ -9,13 +9,13 @@
 #define SS_PIN 10  //D10:pin of tag reader SDA
 #define RST_PIN 9 //D9:pin of tag reader RST
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
-String accessGranted [2] = {"310988016", "19612012715"};  //RFID serial numbers to grant access to
+String accessGranted [2] = {" 40 64 50 49", " 5B 4F AA 0D"};  //RFID serial numbers to grant access to
 int accessGrantedSize = 2;                                //The number of serial numbers
 #define beep_pin 8
 
-#define LCD_COLS 20
-#define LCD_ROWS 4
-#define LCD_I2C_ADDRESS 0x20
+#define LCD_COLS 16
+#define LCD_ROWS 2
+#define LCD_I2C_ADDRESS 0x27
 LiquidCrystal_I2C lcd(LCD_I2C_ADDRESS, LCD_COLS, LCD_ROWS); //declaration des ports du LCD sur les broches de l'arduino => initialisation de l'afficheur avec les ports 
 
 Servo lockServo ;
@@ -52,38 +52,66 @@ void setup()
 {
   //setup serial monitor
   Serial.begin(9600);
-
+  lcd.init();
   //setup lcd with backlight and initialize
   lcd.begin(16, 2);
   lcd.backlight();
-  pinMode( 13, OUTPUT );
-  digitalWrite( 13, LOW );
-  pinMode( 10, OUTPUT );
-  digitalWrite( 10, LOW );
+  pinMode( 5, OUTPUT ); // led verte 
+  digitalWrite(5, LOW);
+  pinMode( 6, OUTPUT ); //led rouge
+  digitalWrite(6, LOW);
    
   SPI.begin();      // Initiate  SPI bus
   mfrc522.PCD_Init();   // Initiate MFRC522
-  lockServo.attach( A0);
-  lockServo.write(lockPos);
+  //lockServo.attach( A0);
+  //lockServo.write(lockPos);
 
 }
 void loop() 
 {
-  while( locked == false ){
-     delay(5000);
-     lcd.setCursor(0, 0);
-     lcd.print("closed door");
-     delay(500);
-     lcd.clear();
-     lcd.setCursor(0, 0);
-     lcd.print("closed door");
-     delay(500);
-     lcd.clear();
-     lcd.setCursor(0, 0);
-     lcd.print("closed door");
-     delay(500);
-     lcd.clear(); 
+//  while( locked == false ){
+//     delay(5000);
+//     lcd.setCursor(0, 0);
+//     lcd.print("closed door");
+//     delay(500);
+//     lcd.clear();
+//     lcd.setCursor(0, 0);
+//     lcd.print("closed door");
+//     delay(500);
+//     lcd.clear();
+//     lcd.setCursor(0, 0);
+//     lcd.print("closed door");
+//     delay(500);
+//     lcd.clear(); 
+//  }
+  // Look for new cards
+  if ( ! mfrc522.PICC_IsNewCardPresent()) 
+  {
+    return;
   }
+  // Select one of the cards
+  if ( ! mfrc522.PICC_ReadCardSerial()) 
+  {
+    return;
+  }
+  //Show UID on serial monitor
+  Serial.print("UID tag :");
+  String content= "";
+  byte letter;
+  for (byte i = 0; i < mfrc522.uid.size; i++) 
+  {
+     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     Serial.print (mfrc522.uid.uidByte[i], HEX);
+     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+     content.concat(String(mfrc522.uid.uidByte[i], HEX));
+  }
+  Serial.println();
+  Serial.print("Message : ");
+  content.toUpperCase();
+  Serial.println ( content );
+  checkAccess_with_rfid ( content );
+  //mfrc522.PICC_HaltA(); 
+  
   lcd.setCursor(0, 0);
   lcd.print("Put your card to");
   lcd.setCursor(0, 1);
@@ -125,33 +153,7 @@ void loop()
     lcd.clear();
    }
 
-  // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) 
-  {
-    return;
-  }
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) 
-  {
-    return;
-  }
-  //Show UID on serial monitor
-  Serial.print("UID tag :");
-  String content= "";
-  byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) 
-  {
-     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.print(mfrc522.uid.uidByte[i], HEX);
-     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-     content.concat(String(mfrc522.uid.uidByte[i], HEX));
-  }
-  Serial.println();
-  Serial.print("Message : ");
-  content.toUpperCase();
-  Serial.println ( content );
-  checkAccess_with_rfid ( content );
-  mfrc522.PICC_HaltA(); 
+  
 
 }
 
@@ -160,24 +162,24 @@ void checkAccess_with_rfid (String temp)    //Function to check if an identified
   boolean granted = false;
   for (int i=0; i <= (accessGrantedSize-1); i++)    //Runs through all tag ID numbers registered in the array
   {
-    if(accessGranted[i] == temp)            //If a tag is found then open/close the lock
+    if(accessGranted[i].equals( temp ) )            //If a tag is found then open/close the lock
     {
       Serial.println ("Access Granted");
       granted = true;
-      grantedHandler( locked );
+      //grantedHandler( locked );
       lcd.clear();
       lcd.print("ACCESS PERMITTED!!");
-      digitalWrite( 10, HIGH );
+      digitalWrite( 4, HIGH );
       delay( 500 );
-      digitalWrite( 10, LOW );
+      digitalWrite( 4, LOW );
       delay( 500 );
-      digitalWrite( 10, HIGH );
+      digitalWrite( 4, HIGH );
       delay( 500 );
-      digitalWrite( 10, LOW );
+      digitalWrite( 4, LOW );
       delay( 500 );
-      digitalWrite( 10, HIGH );
+      digitalWrite( 4, HIGH );
       delay( 500 );
-      digitalWrite( 10, LOW );
+      digitalWrite( 4, LOW );
       delay(1000);
       lcd.clear();
     }
@@ -188,17 +190,17 @@ void checkAccess_with_rfid (String temp)    //Function to check if an identified
     lcd.clear();
     lcd.print("ACCESS DENIED!!");
       Serial.println("ACCESS DENIED!!");
-      digitalWrite( 13, HIGH );
+      digitalWrite( 5, HIGH );
       delay( 500 );
-      digitalWrite( 13, LOW );
+      digitalWrite( 5, LOW );
       delay( 500 );
-      digitalWrite( 13, HIGH );
+      digitalWrite( 5, HIGH );
       delay( 500 );
-      digitalWrite( 13, LOW );
+      digitalWrite( 5, LOW );
       delay( 500 );
-      digitalWrite( 13, HIGH );
+      digitalWrite( 5, HIGH );
       delay( 500 );
-      digitalWrite( 13, LOW );
+      digitalWrite( 5, LOW );
       delay(1000);
       lcd.clear();
   }
@@ -212,36 +214,36 @@ void checkAccess_with_keypad (String value)    //Function to check if an identif
       lcd.clear();
       lcd.print("ACCESS DENIED!!");
       Serial.println("ACCESS DENIED!!");
-      digitalWrite( 13, HIGH );
+      digitalWrite( 5, HIGH );
       delay( 500 );
-      digitalWrite( 13, LOW );
+      digitalWrite( 5, LOW );
       delay( 500 );
-      digitalWrite( 13, HIGH );
+      digitalWrite( 5, HIGH );
       delay( 500 );
-      digitalWrite( 13, LOW );
+      digitalWrite( 5, LOW );
       delay( 500 );
-      digitalWrite( 13, HIGH );
+      digitalWrite( 5, HIGH );
       delay( 500 );
-      digitalWrite( 13, LOW );
+      digitalWrite( 5, LOW );
       delay(1000);
       lcd.clear();
     }
     else{
       granted = true;
-      grantedHandler( locked );
+      //grantedHandler( locked );
       lcd.clear();
       lcd.print("ACCESS PERMITTED!!");
-      digitalWrite( 10, HIGH );
+      digitalWrite( 4, HIGH );
       delay( 500 );
-      digitalWrite( 10, LOW );
+      digitalWrite( 4, LOW );
       delay( 500 );
-      digitalWrite( 10, HIGH );
+      digitalWrite( 4, HIGH );
       delay( 500 );
-      digitalWrite( 10, LOW );
+      digitalWrite( 4, LOW );
       delay( 500 );
-      digitalWrite( 10, HIGH );
+      digitalWrite( 4, HIGH );
       delay( 500 );
-      digitalWrite( 10, LOW );
+      digitalWrite( 4, LOW );
       delay(1000);
       lcd.clear();
     }
