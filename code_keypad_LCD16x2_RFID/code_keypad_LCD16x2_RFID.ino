@@ -4,6 +4,10 @@
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
 #include <Keypad.h>
+#include <Stepper.h>
+ 
+#define STEPS 20
+Stepper stepper(STEPS, 8, 9, 10, 11);
  
 
 #define SS_PIN 10  //D10:pin of tag reader SDA
@@ -11,6 +15,7 @@
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 String accessGranted [2] = {" 40 64 50 49", " 5B 4F AA 0D"};  //RFID serial numbers to grant access to
 int accessGrantedSize = 2;                                //The number of serial numbers
+int buzzer = 11;
 #define beep_pin 8
 
 #define LCD_COLS 16
@@ -67,6 +72,9 @@ void setup()
   //lockServo.write(lockPos);
 
 }
+
+int direction_ = -1, speed_ = 0;
+
 void loop() 
 {
 //  while( locked == false ){
@@ -166,7 +174,7 @@ void checkAccess_with_rfid (String temp)    //Function to check if an identified
     {
       Serial.println ("Access Granted");
       granted = true;
-      //grantedHandler( locked );
+      grantedHandler();
       lcd.clear();
       lcd.print("ACCESS PERMITTED!!");
       digitalWrite( 4, HIGH );
@@ -189,6 +197,7 @@ void checkAccess_with_rfid (String temp)    //Function to check if an identified
     Serial.println ("Access Denied");
     lcd.clear();
     lcd.print("ACCESS DENIED!!");
+    deniedHandler();
       Serial.println("ACCESS DENIED!!");
       digitalWrite( 5, HIGH );
       delay( 500 );
@@ -212,6 +221,7 @@ void checkAccess_with_keypad (String value)    //Function to check if an identif
     if(value!="01010"){
       number_of_test++;
       lcd.clear();
+      deniedHandler();
       lcd.print("ACCESS DENIED!!");
       Serial.println("ACCESS DENIED!!");
       digitalWrite( 5, HIGH );
@@ -230,7 +240,7 @@ void checkAccess_with_keypad (String value)    //Function to check if an identif
     }
     else{
       granted = true;
-      //grantedHandler( locked );
+      grantedHandler();
       lcd.clear();
       lcd.print("ACCESS PERMITTED!!");
       digitalWrite( 4, HIGH );
@@ -249,15 +259,32 @@ void checkAccess_with_keypad (String value)    //Function to check if an identif
     }
 } 
 
-void grantedHandler( boolean locked ){
-    if (locked == true)         //If the lock is closed then open it
-      {
-          lockServo.write(unlockPos);
-          locked = false;
-      }
-      else if (locked == false)   //If the lock is open then close it
-      {
-          lockServo.write(lockPos);
-          locked = true;
-      }
+void grantedHandler(){
+  speed_ = 1000;
+  stepper.setSpeed(speed_);  
+  // move the stepper motor
+  stepper.step(direction_);
+
+  tone(buzzer, 450 );
+  delay(200);
+  noTone(buzzer);
+  delay(200);
+}
+
+void deniedHandler(){
+  tone(buzzer, 450 );
+  delay(200);
+  noTone(buzzer);
+  delay(300);
+
+  tone(buzzer, 450 );
+  delay(200);
+  noTone(buzzer);
+  delay(300);
+
+  tone(buzzer, 450 );
+  delay(200);
+  noTone(buzzer);
+  delay(300);
+  
 }
