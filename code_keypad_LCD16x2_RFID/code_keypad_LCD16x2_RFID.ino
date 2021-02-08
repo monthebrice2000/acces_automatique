@@ -7,7 +7,7 @@
 #include <Stepper.h>
  
 #define STEPS 20
-Stepper stepper(STEPS, 8, 9, 10, 11);
+Stepper stepper(STEPS, 7, 8, 9, 10);
  
 
 #define SS_PIN 10  //D10:pin of tag reader SDA
@@ -45,8 +45,8 @@ char hexaKeys[ROWS][COLS] = {
 };
 
 //connexion to the arduino board
-byte rowPins[ROWS] = {6, 7, 8, 9};
-byte colPins[COLS] = {A1, A2, A3, A4 };
+byte rowPins[ROWS] = {A0, A1, A2, A3};
+byte colPins[COLS] = { 3, 2, 1, 0};
 
 //create keypad object
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
